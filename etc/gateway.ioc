@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ioc version="1">
+  <provision class="instance" name="CommandGateway" source="gateway.Gateway"/>
+</ioc>
+<!-- vim: set syntax=xml ts=2 sw=2: -->
