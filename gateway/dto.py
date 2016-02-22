@@ -1,4 +1,6 @@
 from collections import namedtuple
 
 
-CommandRequestDTO = namedtuple('CommandRequestDTO', ['command_type','params'])
+CommandRequestDTO = namedtuple('CommandRequestDTO', ['command','asynchronous','params'])
+CommandResponseDTO = namedtuple('CommandResponseDTO', [
+    'command_id','result'])

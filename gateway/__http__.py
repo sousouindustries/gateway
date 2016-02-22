@@ -78,7 +78,8 @@ class GatewayController(RequestController):
     def post(self, request, **kwargs):
         try:
             command = self.parse_command(request)
-            result, created = self.gateway.issue(command, principal=request.principal)
+            result, created, failed = \
+                self.gateway.issue(command, principal=request.principal)
             status = 201 if created else 202
         except self.gateway.NotAuthorized:
             status = 401
@@ -106,7 +107,7 @@ class GatewayController(RequestController):
             result = {
                 'code': 'READONLY_MODE',
                 'message': "The system is in read-only mode.",
-                'hint': e.reason
+                'hint': e.reason or "The system is in read-only mode until further notice."
             }
         except self.gateway.UpstreamFailure as e:
             status = 503
@@ -125,8 +126,9 @@ class GatewayController(RequestController):
         return command
 
     class CommandRequestSchema(Schema):
-        command_type = marshmallow.fields.String(required=True)
+        command = marshmallow.fields.String(required=True)
         params = marshmallow.fields.Dict(required=True)
+        asynchronous = marshmallow.fields.Boolean(default=False, missing=False)
 
         @marshmallow.decorators.post_load
         def create_dto(self, data):
@@ -166,6 +168,7 @@ class GatewayApplication:
         return handler(request, **values)
 
     class request_class(Request, IRequest):
+        principal = None
 
         @property
         def json(self):
