@@ -73,14 +73,31 @@ class GatewayController(RequestController):
         return json.dumps(context, indent=4)
 
     def get(self, request, **kwargs):
-        return self.render_to_response([])
+        return self.render_to_response(self.gateway.get_commands())
 
     def post(self, request, **kwargs):
         try:
             command = self.parse_command(request)
-            result, created, failed = \
-                self.gateway.issue(command, principal=request.principal)
-            status = 201 if created else 202
+            result = \
+                self.gateway.issue(command)
+            status = 200
+            if result.created:
+                status = 201
+            if not result.done:
+                status = 202
+
+            result = {
+                'command_id': result.command_id,
+                'ident': result.ident,
+                'result': result.result
+            }
+        except self.gateway.CommandFailed as e:
+            status = 500
+            result = {
+                'code': 'FATAL_ERROR',
+                'message': "Fatal error during command handling.",
+                'hint': e.reason
+            }
         except self.gateway.NotAuthorized:
             status = 401
             result = {
@@ -100,7 +117,8 @@ class GatewayController(RequestController):
             result = {
                 'code': 'UNPROCESSABLE_ENTITY',
                 'message': "The command provided in the request could not be processed.",
-                'hint': getattr(e, 'reason', "Invalid command parameters.")
+                'hint': getattr(e, 'reason', "Invalid command parameters."),
+                'context': getattr(e, 'context', {})
             }
         except self.gateway.ReadOnlyMode as e:
             status = 503
@@ -119,7 +137,13 @@ class GatewayController(RequestController):
         return self.render_to_response(result, status=status)
 
     def parse_command(self, request):
-        command, errors = self.command_schema.load(request.json)
+        data = request.json
+        data.update({
+            'issuer': request.issuer,
+            'authenticated_by': request.authenticated_by,
+            'host': request.remote_addr
+        })
+        command, errors = self.command_schema.load(data)
         if errors:
             raise self.UnprocessableEntity({'hint': "Malformed command request."})
 
@@ -129,9 +153,14 @@ class GatewayController(RequestController):
         command = marshmallow.fields.String(required=True)
         params = marshmallow.fields.Dict(required=True)
         asynchronous = marshmallow.fields.Boolean(default=False, missing=False)
+        host = marshmallow.fields.String(required=True)
+        issuer = marshmallow.fields.Integer(required=True)
+        authenticated_by = marshmallow.fields.Integer(required=True)
 
         @marshmallow.decorators.post_load
         def create_dto(self, data):
+            # The id attribute will be set by the command storage backend.
+            data['id'] = None
             return CommandRequestDTO(**data)
 
 
@@ -168,7 +197,8 @@ class GatewayApplication:
         return handler(request, **values)
 
     class request_class(Request, IRequest):
-        principal = None
+        issuer = 100
+        authenticated_by = 100
 
         @property
         def json(self):

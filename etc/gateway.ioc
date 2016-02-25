@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ioc version="1">
   <provision class="instance" name="CommandGateway" source="gateway.Gateway"/>
+  <provision class="instance" name="CommandStore" source="gateway.test.CommandStore"/>
+  <provision class="instance" name="CommandRunner" source="gateway.test.CommandRunner"/>
   <provision class="instance" name="CommandHandlersProvider" source="gateway.CommandHandlersProvider"/>
 </ioc>
 <!-- vim: set syntax=xml ts=2 sw=2: -->

@@ -1,4 +1,5 @@
 from libsousou.meta import hybrid_property
+from eda import dto
 
 from gateway.handler import ICommandHandler
 
@@ -8,10 +9,21 @@ class TestCommand:
 
 
 class TestCommandHandler(ICommandHandler):
+    foo = dto.Integer(required=True)
+    bar = dto.Integer(required=True)
+    baz = dto.Integer(required=True)
 
     @hybrid_property
     def command_type(self):
-        return 'gateway.test.TestCommand'
+        return self.command
+
+    def run(self, command):
+        """Runs the given command."""
+        result = self.handle(self.dto_class(**command.params))
+        return None, result, False
+
+    def handle(self, params):
+        return None
 
     def validate(self, params):
         params, errors = self.schema.load(params)
@@ -23,4 +35,4 @@ class TestCommandHandler(ICommandHandler):
         return params
 
     class Meta:
-        command = TestCommand
+        command = 'gateway.test.TestCommand'

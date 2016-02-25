@@ -7,3 +7,4 @@ class ICommandProcessor:
     ReadOnlyMode = type('ReadOnlyMode', (GatewayException,), {})
     UpstreamFailure = type('UpstreamFailure', (GatewayException,), {})
     NotAuthorized = type('NotAuthorized', (GatewayException,), {})
+    CommandFailed = type('CommandFailed', (GatewayException,), {})

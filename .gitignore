@@ -2,6 +2,7 @@
 *.swp # vi swap files
 debian/python3-gateway/
 debian/gateway-server/
+test.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
