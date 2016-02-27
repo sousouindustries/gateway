@@ -22,3 +22,9 @@ links:
 
 purge:
 	rm -rf $(PYTHON3_LIB_DIR)/$(PYTHON3_MODULE_NAME)
+
+
+devpackage:
+	dpkg-buildpackage -rfakeroot -us -uc -b
+	rm -rf $(CWD)/debian/python3-gateway
+	rm -rf $(CWD)/debian/gateway-server
